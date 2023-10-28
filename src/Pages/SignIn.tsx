@@ -7,29 +7,55 @@ import { AiOutlineEye, AiOutlineGithub, AiOutlineEyeInvisible } from 'react-icon
 import { FcGoogle } from 'react-icons/fc'
 import { useFormik } from 'formik'
 import { useNavigate } from 'react-router-dom'
+import * as Yup from 'yup'
+import { Oval } from 'react-loader-spinner'
+import { LogIn } from '../Utils/Auth'
+import { setCookies } from './SignUp'
+import { useDispatch } from 'react-redux'
+import { setIsAuthenticated, setAccessToken } from '../Utils/Slicer'
 
 const SignIn = () => {
     const navigate = useNavigate()
+    const dispatch = useDispatch()
     const [isVisible, setIsVisible] = useState(false);
     const [ passVisible, setPassVisible ] = useState(false)
+    const [ isLoading, setIsLoading ] = useState(false)
 
     const handleEyeToggle = () => {
         setIsVisible(!isVisible);
         setPassVisible(!passVisible);
     }
-
-    const handleSignIn = (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        alert('About to Sign in');
-    };
     
-    const formik = useFormik({
+    const formik:any = useFormik({
         initialValues: {
             email: '',
             password: ''
         },
-        onSubmit: () => {
-            alert('Loggin in')
+        validationSchema: Yup.object({
+            email: Yup.string()
+                .required("Email is required"),
+            password: Yup.string()
+                .min(6).max(20)
+                .required("Password is required")
+        }),
+        onSubmit: async (values, { resetForm }) => {
+            setIsLoading(true)
+            try{
+                await LogIn.EmailandPassword(values.email, values.password)
+                    .then((user: any) => {
+                        setCookies({
+                            accessToken: user.accessToken,
+                            userEmail: user.email,
+                            userName: user.username
+                        })
+                        dispatch(setAccessToken(user.accessToken))
+                        dispatch(setIsAuthenticated(true))
+                    })
+            } catch (error: any) {
+                console.log(error.message)
+            } finally {
+                resetForm()
+            }
         }
     })
     const Socials = [
@@ -52,10 +78,16 @@ const SignIn = () => {
                     IconBefore={<HiOutlineMail />}
                     value={formik.values.email}
                     onChange={formik.handleChange} 
+                    onBlur={formik.handleBlur}
                     name={'email'} 
                     IconAfter={undefined}
                     disabled= {false}
                 />
+                {
+                    formik.touched.email && formik.errors.email ? (
+                        <small className='error text-[12px] text-center text-[red]'>{formik.errors.email}</small>
+                    ) : null
+                }
                 <Input 
                     placeholder="Password.."
                     type={ passVisible ? 'text' : 'password'  }
@@ -67,11 +99,19 @@ const SignIn = () => {
                     IconAfter={isVisible ? <AiOutlineEye/> : <AiOutlineEyeInvisible/>}
                     onIconAfterClicked={() => handleEyeToggle()}
                 />
+                {
+                    formik.touched.email && formik.errors.password ? (
+                        <small className='error text-[12px] text-center text-[red]'>{formik.errors.password}</small>
+                    ) : null
+                }
                 <Button
                     ContainerStyle={'email mt-4 bg-[#85b1ff] text-[#000000]'}
                     text={'Create Account'}
                     type='submit'
                     onClick={formik.handleSubmit}
+                    renderChildren={
+                        <Oval height={25} strokeWidth={5} secondaryColor='white' color='white' visible={isLoading} />
+                    }
                 />
 
             </form>
@@ -85,7 +125,7 @@ const SignIn = () => {
             </div>
             <div className='footer w-full px-8 my-5'>
                 <Button
-                    text={'Dont have an account? Sign In'}
+                    text={'Dont have an account? Sign Up'}
                     ContainerStyle={'signIn bg-white'}
                     onClick={() => {
                         navigate('/SignUp')

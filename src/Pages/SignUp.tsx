@@ -7,30 +7,65 @@ import { AiOutlineEye, AiOutlineGithub, AiOutlineEyeInvisible } from 'react-icon
 import { FcGoogle } from 'react-icons/fc'
 import { useFormik } from 'formik'
 import { useNavigate } from 'react-router-dom'
+import * as Yup from 'yup'
+import { Oval } from 'react-loader-spinner'
+import { CreateAccount } from '../Utils/Auth'
+import Cookies from 'js-cookie'
+import { useDispatch} from 'react-redux'
+import { setIsAuthenticated, setAccessToken } from '../Utils/Slicer'
+
+export const setCookies = (variables:any) => {
+    for ( const variable in variables ) {
+        if (variables.hasOwnProperty(variable)){
+            Cookies.set(variable, variables[variable]);
+        }
+    }
+}
 
 const SignUp = () => {
+    const dispatch = useDispatch()
     const navigate = useNavigate()
     const [isVisible, setIsVisible] = useState(false);
     const [ passVisible, setPassVisible ] = useState(false)
+    const [ isLoading, setIsLoading ] = useState(false)
 
     const handleEyeToggle = () => {
         setIsVisible(!isVisible);
-        setPassVisible(!setPassVisible);
+        setPassVisible(!passVisible);
     }
-
-    const handleSignIn = (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        alert('About to Sign in');
-    };
     
-    const formik = useFormik({
+    const formik:any = useFormik({
         initialValues: {
             username: '',
             email: '',
             password: ''
         },
-        onSubmit: () => {
-            console.log('Loggin in')
+        validationSchema: Yup.object({
+            email: Yup.string()
+                .required("Email is required"),
+            password: Yup.string()
+                .min(6).max(20)
+                .required("Password is required")
+        }),
+        onSubmit: async (values, { resetForm }) => {
+            setIsLoading(true)
+            try {
+                await CreateAccount.EmailandPassword(values.email, values.password, values.username)
+                    .then((user:any) => {
+                        setCookies({
+                            accessToken: user.accessToken, 
+                            userEmail: user.email, 
+                            userName: values.username
+                        })
+                        dispatch(setAccessToken(user.accessToken))
+                        dispatch(setIsAuthenticated(true))
+                    })
+            setIsLoading(false)
+            } catch (error: any) {
+                console.log(error.message)
+            } finally {
+                resetForm()
+            }
         }
     })
 
@@ -39,7 +74,7 @@ const SignUp = () => {
         {name: 'Facebook', icon: <BiLogoFacebook size={30} color='blue'/> },
         {name: 'Github', icon: <AiOutlineGithub size={30}/> }
     ]
-    
+
     return (
         <div className="SignUpBody bg-white w-[35%] flex flex-col items-center rounded my-2">
             <h1 className="SignUp text-[3rem]">
@@ -55,7 +90,7 @@ const SignUp = () => {
                     IconBefore={<HiOutlineMail />}
                     value={formik.values.username}
                     onChange={formik.handleChange} 
-                    name={'name'} 
+                    name={'username'} 
                     IconAfter={undefined}
                 />
                 <Input 
@@ -83,7 +118,10 @@ const SignUp = () => {
                     ContainerStyle={'email mt-4 bg-[#85b1ff] text-[#000000]'}
                     text={'Create Account'}
                     type='submit'
-                    onClick={handleSignIn}
+                    onClick={formik.handleSubmit}
+                    renderChildren={
+                        <Oval height={25} strokeWidth={5} secondaryColor='white' color='white' visible={isLoading} />
+                    }
                 />
 
             </form>
