@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { setIsAuthenticated } from '../Utils/Slicer';
 import { useDispatch } from 'react-redux';
 import { AiOutlineStar, AiOutlineSearch, AiOutlineCalendar, AiOutlineCheck } from 'react-icons/ai';
@@ -6,8 +6,10 @@ import { BsTrash } from 'react-icons/bs';
 import { BiCog } from 'react-icons/bi';
 import { SlLogout } from 'react-icons/sl';
 import Task from '../Components/Task';
-import Button from '../Components/Button';
 import AddTaskModal from '../Components/AddTaskModal';
+import Cookies from 'js-cookie';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { Db } from '../Utils/Firebase';
 
 type Tab = 'today' | 'upcoming' | 'completed' | 'deleted' | 'settings';
 
@@ -15,6 +17,9 @@ const Sidebar: React.FC<{ onSelectTab: (tab: Tab) => void }> = ({ onSelectTab })
     const dispatch = useDispatch()
     const handleLogOut = () => {
         dispatch(setIsAuthenticated(false))
+        Cookies.remove('accessToken')
+        Cookies.remove('userEmail')
+        Cookies.remove('userName')
     }
     return (
         <aside>
@@ -61,13 +66,38 @@ interface CenterBarProps {
 
 const CenterBar: React.FC<CenterBarProps> = ({ selectedTab}) => {
     const [ modalOpen, setModalOpen ] = useState(false)
-    const [ selectedTask, setSelectedTask ] = useState(false)
+    const [selectedTask, setSelectedTask] = useState<object | null>(null);
+    const [tasks, setTasks] = useState<{ id: string }[]>([]);
     const handleOpen = () => setModalOpen(true)
     const handleModalClose = () => setModalOpen(false)
     
-    const handleClick = (taskContent:string) => {
-        console.log(taskContent);
-        setSelectedTask(true)
+    const fetchTasks = () => {
+        const email = Cookies.get('userEmail');
+        console.log(email)
+        if (email !== undefined) {
+            const taskCollection = collection(Db, 'Tasks');
+            const taskQuery = query(taskCollection, where('Email', '==', email));
+        
+            const unsubscribe = onSnapshot(taskQuery, (snapshot) => {
+                const updatedTasks = snapshot.docs.map((doc) => ({
+                    id: doc.id,
+                    ...doc.data(),
+                }));
+                setTasks(updatedTasks);
+            });
+    
+            return () => unsubscribe();
+        } else {
+            console.log('Email not found in cookies');
+        }
+    };
+
+    useEffect(() => {
+        fetchTasks();
+    }, []);
+    const handleTaskClick = (item:object) => {
+        console.log(item)
+        setSelectedTask(item)
     }
     
     const renderTabContent = () => {
@@ -82,8 +112,21 @@ const CenterBar: React.FC<CenterBarProps> = ({ selectedTab}) => {
                             New Task
                         </button>
                         <AddTaskModal isOpen={modalOpen} handleClose={() => handleModalClose()}/>
-                        <Task
-                            onClick={() => handleClick('Task one')} isSelected={selectedTask} taskContent={'helloe'}                        />
+                        {tasks.map((item: any) => {
+                            const dueDate = item.DueDate.toDate();
+                            const options = { weekday: 'short',day: 'numeric', month: 'short', year: 'numeric' };
+                            const formattedDueDate = dueDate.toLocaleDateString(undefined, options);
+                            
+                            return (
+                                <Task
+                                taskTitle={item.Topic}
+                                dueDate={formattedDueDate}
+                                category={item.Category}
+                                key={item.id}
+                                onClick={() => handleTaskClick(item)}
+                                />
+                            );
+                        })}
                     </div>
                 );
             case 'upcoming':
@@ -117,7 +160,7 @@ const CenterBar: React.FC<CenterBarProps> = ({ selectedTab}) => {
                     {renderTabContent()}
                 </div>
                 <div className='taskContent'>
-                    {selectedTask && <div>{selectedTask}</div>}
+                    Selected Task: {JSON.stringify(selectedTask)}
                 </div>
             </div>
         </div>

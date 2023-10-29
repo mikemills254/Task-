@@ -13,9 +13,9 @@ export const CreateAccount = {
             const user = userCredential.user;
             const docID = await storeUserInfor(username, email, password);
         return {user, docID};
-        } catch (error:any) {
-            console.error("Sign in error:", error.code, error.message);
-        throw error;
+        } catch (error) {
+            console.error("Sign in error:", error);
+            throw error;
         }
     },
 };
@@ -26,12 +26,29 @@ export const LogIn = {
             const results = await signInWithEmailAndPassword(auth, email, password);
             const user = results.user;
         return user;
-        } catch (error:any) {
-        console.log(error.message);
-            return error.message;
+        } catch (error) {
+            console.log(error);
+            throw error;
         }
     },
 };
+
+export const Firestore = {
+    AddDataToFirestore: async (topic: string, description: string, due_date: Date, category: string, email: string ) => {
+        try{
+            const results = await addDoc(collection(Db, 'Tasks'), {
+                Topic: topic,
+                Description: description,
+                DueDate: due_date,
+                Category: category,
+                Email: email
+            });
+        return results
+        } catch (error){
+            console.error('Error adding task', error);
+        }
+    }
+}
 
 export const ResetPassword = async (email: string) => {
     await sendPasswordResetEmail(auth, email).then(() => {
@@ -42,9 +59,9 @@ export const ResetPassword = async (email: string) => {
 const storeUserInfor = async (username: string, email: string, password: string): Promise<string> => {
     try {
         const docRef: DocumentReference = await addDoc(collection(Db, "Users"), {
-        Username: username,
-        Email: email,
-        Password: password,
+            Username: username,
+            Email: email,
+            Password: password,
         });
         return docRef.id;
     } catch (error) {

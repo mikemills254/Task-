@@ -3,6 +3,9 @@ import { Modal } from '@mui/material';
 import { AiOutlineCalendar } from 'react-icons/ai';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { Oval } from 'react-loader-spinner'
+import { Firestore } from '../Utils/Auth';
+import Cookies from 'js-cookie';
 
 interface ModalProps {
     isOpen: boolean;
@@ -12,16 +15,29 @@ interface ModalProps {
 
 
 export default function AddTaskModal({ isOpen, handleClose }: ModalProps) {
+    const [ isLoading, setIsLoading ] = useState(false)
     const [ date, setDate ] = useState(new Date())
     const [form, setForm] = useState({ topic: "", description: "" });
     const [selectedOption, setSelectedOption] = useState("personal");
 
-    const handleSubmit = () => {
-        console.log('Submitting..');
-        console.log('Topic:', form.topic);
-        console.log('Description:', form.description);
-        console.log('Due Date:', date);
-        console.log('Selected Option:', selectedOption);
+    const handleSubmit = async () => {
+        setIsLoading(true)
+        try {
+            if(!form.topic || !form.description){
+                setIsLoading(false)
+                alert('Please fill in all the details about the task')
+            } else {
+                const email:any = Cookies.get('userEmail')
+                const results = await Firestore.AddDataToFirestore(form.topic, form.description, date, selectedOption, email )
+                !results ? setIsLoading(false) : console.log('SuccessFully saved')
+            }
+        } catch (error) {
+            console.log(error)
+        } finally {
+            setIsLoading(false)
+            handleClose()
+            setForm({topic:'', description: ''})
+        }
     }
     
     return (
@@ -63,14 +79,7 @@ export default function AddTaskModal({ isOpen, handleClose }: ModalProps) {
                                 </div>
                             }
                             onChange={(date:any) => {
-                                const formattedDate = date.toLocaleDateString("en-US", {
-                                weekday: "short",
-                                day: "numeric",
-                                month: "short",
-                                year: "numeric",
-                                });
-                                console.log(formattedDate);
-                                setDate(formattedDate);
+                                setDate(date)
                             }}
                             selected={date}
                             className="picker w-24 border-[1px] outline-none rounded"
@@ -81,7 +90,7 @@ export default function AddTaskModal({ isOpen, handleClose }: ModalProps) {
                             Cancel
                         </button>
                         <div onClick={handleSubmit} className='footer-btn flex flex-row items-center justify-center w-24 rounded-md gap-2 p-1 text-[14px] border-[1px] bg-[blue] text-white hover:cursor-pointer'>
-                            Add Task
+                            {!isLoading ? <h4>Add Task</h4>: <Oval height={25} strokeWidth={5} secondaryColor='white' color='white'/>}
                         </div>
                     </div>
                 </div>

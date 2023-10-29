@@ -63,6 +63,7 @@ const SignUp = () => {
                     })
             setIsLoading(false)
             } catch (error: any) {
+                setIsLoading(false)
                 console.log(error.message)
             } finally {
                 resetForm()

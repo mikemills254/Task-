@@ -1,39 +1,55 @@
 import { useState } from 'react';
 import { PiDotsNineBold } from 'react-icons/pi';
+import { AiOutlineCopy } from 'react-icons/ai';
+import { BsTrash } from 'react-icons/bs';
+import { BsCalendar4Event } from 'react-icons/bs'
 
 interface TaskProps {
-    onClick: (taskContent: string) => void;
-    isSelected: boolean;
-    taskContent: string;
+    taskTitle: string;
+    dueDate: string;
+    category: string;
+    onClick: () => void;
 }
 
-function Task({ onClick, isSelected, taskContent }: TaskProps) {
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+function Task({ taskTitle, dueDate, category, onClick }: TaskProps) {
+    const [ isDropdownOpen, setisDropdownOpen ] = useState (false) 
 
     const toggleDropdown = () => {
-        setIsDropdownOpen(!isDropdownOpen);
-    };
+        setisDropdownOpen(!isDropdownOpen);
+    }
 
     return (
-        <div
-            className={`task-component border-[1.8px] p-2 flex flex-row cursor-pointer items-center justify-between my-3 rounded-md relative${isSelected ? ' selected' : ''}`}
-            onClick={() => onClick(taskContent)}
-        >
-            <input type="radio" checked={isSelected} />
-            <p className='task-title max-w-[20rem]'>{taskContent}</p>
-            <h6 className='task-category bg-[green] w-20 flex items-center justify-center rounded-full text-[14px] text-white'>school</h6>
-            <div className="task-options">
-                <PiDotsNineBold 
-                    size={20}
+        <div onClick={onClick} className='task-container flex flex-row bg-[white] w-full my-2 rounded-md py-3 px-2 border-[1px] hover:cursor-pointer'>
+            <div className='task-radio w-[10%]'>
+                <input
+                    type='radio'
+                />
+            </div>
+            <div className='task-content w-[70%]'>
+                <p className='title font-medium'>{taskTitle}</p>
+                <div className='due flex flex-row items-center gap-3'>
+                    <BsCalendar4Event size={15}/>
+                    <span className='date text-[12px]'>{dueDate}</span>
+                </div>
+                <small className='category bg-[#f2f7fb] p-1 w-[5rem] text-[#6374ae] rounded-lg'>{category}</small>
+            </div>
+            <div className='task-options w-[10%] ml-[20%] flex flex-col items-center justify-center'>
+                <PiDotsNineBold
+                    size={25}
                     className={`icon-button p-1 rounded-full hover:cursor-pointer${isDropdownOpen ? ' active' : ''}`}
                     onClick={toggleDropdown}
                 />
                 {isDropdownOpen && (
-                    <div className="dropdown-menu absolute right-0 mt-2 bg-[red] border-[1.8px] rounded-md shadow-md z-30">
-                        <div className="dropdown-item">Option 1</div>
-                        <div className="dropdown-item">Option 2</div>
-                        <div className="dropdown-item">Option 3</div>
+                <div className="dropdown-menu absolute mt-[6rem] border-[1.8px] z-30 w-[6rem] py-2 shadow-[rgba(0, 0, 0, 0.24) 0px 3px 8px]">
+                    <div className="dropdown-item mb-1 pl-3 flex flex-row items-center gap-2">
+                        <AiOutlineCopy />
+                        Copy
                     </div>
+                    <div className="dropdown-item pl-3 flex flex-row items-center gap-2">
+                        <BsTrash />
+                        Delete
+                    </div>
+                </div>
                 )}
             </div>
         </div>

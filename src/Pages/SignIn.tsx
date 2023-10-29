@@ -51,8 +51,10 @@ const SignIn = () => {
                         dispatch(setAccessToken(user.accessToken))
                         dispatch(setIsAuthenticated(true))
                     })
+                setIsLoading(false)
             } catch (error: any) {
-                console.log(error.message)
+                setIsLoading(false)
+                alert(error.message)
             } finally {
                 resetForm()
             }
