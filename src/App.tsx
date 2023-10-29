@@ -16,7 +16,7 @@ const App = () => {
         <div className="body m-0 p-0 h-[100vh] flex align-middle justify-center">
             <Router>
                 <Routes>
-                    {isAuthenticated ? (
+                    {!isAuthenticated ? (
                         <>
                             <Route path='/' element={<SignIn/>}/>
                             <Route path='/SignUp' element={<SignUp/>}/>

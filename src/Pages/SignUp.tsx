@@ -51,13 +51,14 @@ const SignUp = () => {
             setIsLoading(true)
             try {
                 await CreateAccount.EmailandPassword(values.email, values.password, values.username)
-                    .then((user:any) => {
+                    .then((results:any) => {
+                        console.log(results.user)
                         setCookies({
-                            accessToken: user.accessToken, 
-                            userEmail: user.email, 
+                            accessToken: results.user.accessToken, 
+                            userEmail: results.user.email, 
                             userName: values.username
                         })
-                        dispatch(setAccessToken(user.accessToken))
+                        dispatch(setAccessToken(results.user.accessToken))
                         dispatch(setIsAuthenticated(true))
                     })
             setIsLoading(false)

@@ -1,3 +1,17 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.sidebar__container li {
+    display: flex;
+    /* background-color: blue; */
+    align-items: center;
+    flex-direction: row;
+    gap: 10px;
+    padding: 10px 0;
+    padding-left: 1rem;
+}
+.sidebar__container li:hover{
+    cursor: pointer;
+    background-color: blue;
+}
