@@ -15,3 +15,10 @@
     cursor: pointer;
     background-color: blue;
 }
+.categorybtns{
+    background-color: green;
+    margin-bottom: 5px;
+}
+.categorybtns :hover{
+    background-color: red;
+}

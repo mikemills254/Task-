@@ -7,10 +7,15 @@ import { BiCog } from 'react-icons/bi';
 import { SlLogout } from 'react-icons/sl';
 import Task from '../Components/Task';
 import Button from '../Components/Button';
+import AddTaskModal from '../Components/AddTaskModal';
 
 type Tab = 'today' | 'upcoming' | 'completed' | 'deleted' | 'settings';
 
 const Sidebar: React.FC<{ onSelectTab: (tab: Tab) => void }> = ({ onSelectTab }) => {
+    const dispatch = useDispatch()
+    const handleLogOut = () => {
+        dispatch(setIsAuthenticated(false))
+    }
     return (
         <aside>
             <div className="sidebar__container h-full w-60 flex flex-col align-middle justify-between border-r-[1.5px]">
@@ -40,7 +45,7 @@ const Sidebar: React.FC<{ onSelectTab: (tab: Tab) => void }> = ({ onSelectTab })
                         <BiCog />
                         Settings
                     </li>
-                    <li>
+                    <li onClick={() => handleLogOut()}>
                         <SlLogout />
                         LogOut
                     </li>
@@ -50,33 +55,35 @@ const Sidebar: React.FC<{ onSelectTab: (tab: Tab) => void }> = ({ onSelectTab })
     );
 };
 
-const CenterBar: React.FC<{ selectedTab: Tab }> = ({ selectedTab }) => {
+interface CenterBarProps {
+    selectedTab: Tab;
+}
+
+const CenterBar: React.FC<CenterBarProps> = ({ selectedTab}) => {
+    const [ modalOpen, setModalOpen ] = useState(false)
+    const [ selectedTask, setSelectedTask ] = useState(false)
+    const handleOpen = () => setModalOpen(true)
+    const handleModalClose = () => setModalOpen(false)
+    
+    const handleClick = (taskContent:string) => {
+        console.log(taskContent);
+        setSelectedTask(true)
+    }
+    
     const renderTabContent = () => {
-        // Depending on the selectedTab, render the appropriate content.
         switch (selectedTab) {
             case 'today':
                 return (
                     <div className='todayTask h-full overflow-y-auto scrollbar-hide'>
-                        <Task/>
-                        <Task/>
-                        <Task/>
-                        <Task/>
-                        <Task/>
-                        <Task/>
-                        <Task/>
-                        <Task/>
-                        <Task/>
-                        <Task/>
-                        <Task/>
-                        <Task/>
-                        <Task/>
-                        <Task/>
-                        <Task/>
-                        <Task/>
-                        <Task/>
-                        <Task/>
-                        <Task/>
-                        <Task/>
+                        <button
+                            onClick={() => handleOpen()}
+                            className='task-btn bg-[red] w-[5rem] h-[25px] text-[0.9rem] rounded-md'
+                        >
+                            New Task
+                        </button>
+                        <AddTaskModal isOpen={modalOpen} handleClose={() => handleModalClose()}/>
+                        <Task
+                            onClick={() => handleClick('Task one')} isSelected={selectedTask} taskContent={'helloe'}                        />
                     </div>
                 );
             case 'upcoming':
@@ -106,14 +113,11 @@ const CenterBar: React.FC<{ selectedTab: Tab }> = ({ selectedTab }) => {
             </header>
             <div className="tab-content w-full h-[90%] flex flex-row pt-3">
                 <div className='task w-[60%] border-r-[1.5px] px-5'>
-                    <Button
-                        text='New Task'
-                        ContainerStyle={'addtask-btn bg-[red] w-20 h-6 font-semibold p-2 text-[13px]'}
-                    />
+                    
                     {renderTabContent()}
                 </div>
-                <div>
-                    div1
+                <div className='taskContent'>
+                    {selectedTask && <div>{selectedTask}</div>}
                 </div>
             </div>
         </div>
@@ -121,21 +125,16 @@ const CenterBar: React.FC<{ selectedTab: Tab }> = ({ selectedTab }) => {
 };
 
 function Home() {
-    const dispatch = useDispatch();
     const [selectedTab, setSelectedTab] = useState<Tab>('today'); // Initialize with 'today'
 
     const onSelectTab = (tab: Tab) => {
         setSelectedTab(tab);
     };
 
-    const logout = () => {
-        dispatch(setIsAuthenticated(false));
-    }
-
     return (
         <div className="home-container w-full h-full flex flex-row">
             <Sidebar onSelectTab={onSelectTab} />
-            <CenterBar selectedTab={selectedTab} />
+            <CenterBar selectedTab={selectedTab}/>
         </div>
     );
 }
