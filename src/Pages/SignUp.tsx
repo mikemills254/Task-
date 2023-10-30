@@ -117,7 +117,7 @@ const SignUp = () => {
                     onIconAfterClicked={() => handleEyeToggle()}
                 />
                 <Button
-                    ContainerStyle={'email mt-4 bg-[#85b1ff] text-[#000000]'}
+                    ContainerStyle={'email mt-4 bg-[#00a885] text-[white]'}
                     text={'Create Account'}
                     type='submit'
                     onClick={formik.handleSubmit}

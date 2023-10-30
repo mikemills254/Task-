@@ -11,9 +11,15 @@
     padding: 10px 0;
     padding-left: 1rem;
 }
+.activeTab {
+    background-color: #cbffeb;
+}
+.inactive {
+    background-color: white;
+}
 .sidebar__container li:hover{
     cursor: pointer;
-    background-color: blue;
+    background-color: #e9fff8;
 }
 .categorybtns{
     background-color: green;
@@ -26,12 +32,18 @@
     .Body {
         display: flex;
     }
-    
     .sidebar__container {
         display: flex;
-        width: 60%;
+        width: 70%;
         flex-direction: column;
         height: 93vh;
+    }
+    .logo {
+        font-size: 1em;
+        position: relative;
+    }
+    .search-container {
+        margin-left: 40px;
     }
     .sidebar__container li span {
         display: none;
@@ -44,6 +56,40 @@
         flex-direction: column;
     }
     .taskContent {
+        background-color: white;
+        position: absolute;
+        width: 80vw;
+        margin-left: 10px;
+        border-radius: 10px;
+        box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+    }
+    .task-footer {
+        margin-top: 5rem;
+        margin-bottom: 1rem;
+        width: 95%;
+        display: flex;
+        flex-direction: row;
+        padding-inline: 0;
+        justify-content: space-between;
+    }
+    .task-title {
+        font-size: 1.2em;
+        max-width: 20rem;
+    }
+    .describe {
+        font-size: 1em;
+        max-width: 20rem;
+    }
+    .finish, .copy{
+        font-size: smaller;
+    }
+    .saveIcon, .copyIcon {
+        size: 2px;
+    }
+    .closeBtn {
+        display: block;
+    }
+    .mobile-hidden {
         display: none;
     }
     .tab-content {
@@ -92,5 +138,6 @@
     }
     .SignInBody, .SignUpBody {
         width: 90vw;
+        margin-top: 50px;
     }
 }

@@ -107,7 +107,7 @@ const SignIn = () => {
                     ) : null
                 }
                 <Button
-                    ContainerStyle={'email mt-4 bg-[#85b1ff] text-[#000000]'}
+                    ContainerStyle={'email mt-4 bg-[#00a885] text-[white]'}
                     text={'LOGIN'}
                     type='submit'
                     onClick={formik.handleSubmit}

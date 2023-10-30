@@ -1,55 +1,71 @@
 import React, { useEffect, useState } from 'react';
 import { setIsAuthenticated } from '../Utils/Slicer';
 import { useDispatch } from 'react-redux';
-import { AiOutlineStar, AiOutlineSearch, AiOutlineCalendar, AiOutlineCheck } from 'react-icons/ai';
-import { BsTrash } from 'react-icons/bs';
+import { AiOutlineStar, AiOutlineSearch, AiOutlineCheck } from 'react-icons/ai';
 import { BiCog } from 'react-icons/bi';
 import { SlLogout } from 'react-icons/sl';
 import Task from '../Components/Task';
 import AddTaskModal from '../Components/AddTaskModal';
 import Cookies from 'js-cookie';
-import { collection, deleteDoc, onSnapshot, query, where, doc } from 'firebase/firestore';
+import { collection, deleteDoc, onSnapshot, query, where, doc, addDoc } from 'firebase/firestore';
 import { Db } from '../Utils/Firebase';
 import { GrAdd } from 'react-icons/gr'
 import { IoCheckmarkDoneOutline } from 'react-icons/io5'
 import { AiOutlineCopy } from 'react-icons/ai';
+import { AiOutlineClose } from 'react-icons/ai'
 
 type Tab = 'today' | 'upcoming' | 'completed' | 'deleted' | 'settings';
 
 const Sidebar: React.FC<{ onSelectTab: (tab: Tab) => void }> = ({ onSelectTab }) => {
-    const dispatch = useDispatch()
-    const handleLogOut = () => {
-        dispatch(setIsAuthenticated(false))
-        Cookies.remove('accessToken')
-        Cookies.remove('userEmail')
-        Cookies.remove('userName')
-    }
+    const [activeTab, setActiveTab] = useState<Tab>('today');
+    const dispatch = useDispatch();
+    
+        const handleLogOut = () => {
+            dispatch(setIsAuthenticated(false));
+            Cookies.remove('accessToken');
+            Cookies.remove('userEmail');
+            Cookies.remove('userName');
+        };
+    
     return (
         <aside>
             <div className="sidebar__container h-[100vh] w-60 flex flex-col align-middle justify-between border-r-[1.5px]">
                 <ul className="sidebar_ul">
-                    <h1 className="logo text-[1.5rem] font-semibold border-b-[1.5px] p-2">
-                        Task+
-                    </h1>
-                    <li onClick={() => onSelectTab('today')}>
+                    <div className='thisLogo flex flex-row items-center'>
+                        <h1 className="logo text-[1.5rem] font-semibold border-b-[1.5px] p-2">
+                            Task+
+                        </h1>
+                    </div>
+                    
+                    <li
+                        onClick={() => {
+                            onSelectTab('today');
+                            setActiveTab('today');
+                        }}
+                        className={`tab-item ${activeTab === 'today' ? 'activeTab' : 'inactive'}`}
+                    >
                         <AiOutlineStar />
                         <span>Today</span>
                     </li>
-                    <li onClick={() => onSelectTab('upcoming')}>
-                        <AiOutlineCalendar />
-                        <span>Upcoming</span>
-                    </li>
-                    <li onClick={() => onSelectTab('completed')}>
-                        <AiOutlineCheck />
+                    <li
+                        onClick={() => {
+                            onSelectTab('completed');
+                            setActiveTab('completed');
+                        }}
+                        className={`tab-item ${activeTab === 'completed' ? 'activeTab' : 'inactive'}`}
+                    >
+                    <AiOutlineCheck />
                         <span>Completed</span>
-                    </li>
-                    <li onClick={() => onSelectTab('deleted')}>
-                        <BsTrash />
-                        <span>Deleted</span>
                     </li>
                 </ul>
                 <ul>
-                    <li onClick={() => onSelectTab('settings')}>
+                    <li
+                        onClick={() => {
+                            onSelectTab('settings');
+                            setActiveTab('settings');
+                        }}
+                        className={`tab-item ${activeTab === 'settings' ? 'activeTab' : 'inactive'}`}
+                    >
                         <BiCog />
                         <span>Settings</span>
                     </li>
@@ -60,7 +76,7 @@ const Sidebar: React.FC<{ onSelectTab: (tab: Tab) => void }> = ({ onSelectTab })
                 </ul>
             </div>
         </aside>
-    );
+        );
 };
 
 interface CenterBarProps {
@@ -85,6 +101,9 @@ const CenterBar: React.FC<CenterBarProps> = ({ selectedTab}) => {
     const handleModalClose = () => setModalOpen(false)
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<Task[]>([]);
+    const [isTaskContentVisible, setIsTaskContentVisible] = useState(false);
+    const [ completed, setCompleted ] = useState<{ id: string; Topic: string; Category: string }[]>([]);
+
 
     const handleSearch = (query: string) => {
         setSearchQuery(query);
@@ -99,7 +118,30 @@ const CenterBar: React.FC<CenterBarProps> = ({ selectedTab}) => {
         setSearchResults(filteredTasks);
     };
 
-
+    const FetchCompletedtask = () => {
+        
+        const email = Cookies.get('userEmail');
+        console.log(email)
+        if (email !== undefined) {
+            const taskCollection = collection(Db, 'Completed');
+            const taskQuery = query(taskCollection, where('Email', '==', email));
+        
+            const unsubscribe = onSnapshot(taskQuery, (snapshot) => {
+                let updatedTasks = snapshot.docs.map((doc) => ({
+                    id: doc.id,
+                    Topic: doc.data().TaskName,
+                    Category: doc.data().Description,
+                }));
+                console.log('fromCompleted', completed)
+                setCompleted(updatedTasks);
+            });
+            
+    
+            return () => unsubscribe();
+        } else {
+            console.log('Email not found in cookies');
+        }
+    }
     
     const fetchTasks = () => {
         const email = Cookies.get('userEmail');
@@ -130,16 +172,31 @@ const CenterBar: React.FC<CenterBarProps> = ({ selectedTab}) => {
 
     useEffect(() => {
         fetchTasks();
+        FetchCompletedtask()
+
     }, []);
     const handleTaskClick = (item:any) => {
         console.log(item)
         setSelectedTask(item)
+        if(window.innerWidth <= 768) {
+            setIsTaskContentVisible(true)
+        } else {
+            alert('We are in desktop')
+        }
     }
 
-    const deleteTask = async (taskId: string) => {
+    const deleteTask = async (task: any) => {
         try {
-            const taskRef = doc(Db, 'Tasks', taskId);
-            await deleteDoc(taskRef);
+            await addDoc(collection(Db, 'Completed'), {
+                TaskName: task?.Topic || '',
+                Email: task?.Email || '' ,
+                Description: task?.Description || ''
+            })
+                .then(async() => {
+                    const taskRef = doc(Db, 'Tasks', task.id);
+                    await deleteDoc(taskRef);
+                })
+            
         } catch (error) {
             console.log('Error deleting task', error);
         }
@@ -153,7 +210,7 @@ const CenterBar: React.FC<CenterBarProps> = ({ selectedTab}) => {
                     <div className='todayTask h-full overflow-y-auto scrollbar-hide'>
                         <button
                             onClick={() => handleOpen()}
-                            className='task-btn bg-[red] w-[5rem] h-[25px] text-[0.9rem] rounded-md'
+                            className='task-btn bg-[#cbffeb] w-[10rem] h-[30px] font-semibold text-[0.9rem] rounded-md text-[#00332b] shadow-[rgba(50,_50,_105,_0.15)_0px_2px_5px_0px,_rgba(0,_0,_0,_0.05)_0px_1px_1px_0px]'
                         >
                             New Task
                         </button>
@@ -172,7 +229,7 @@ const CenterBar: React.FC<CenterBarProps> = ({ selectedTab}) => {
                                     dueDate={formattedDueDate}
                                     key={item.id}
                                     value={item.id}
-                                    handleChange={() => deleteTask(item.id)}
+                                    handleChange={() => deleteTask(item)}
                                     onClick={() => handleTaskClick(item)}
                                 />
                             );
@@ -180,16 +237,24 @@ const CenterBar: React.FC<CenterBarProps> = ({ selectedTab}) => {
 
                     </div>
                 );
-            case 'upcoming':
-                return <div>Upcoming Tab Content</div>;
             case 'completed':
-                return <div>Completed Tab Content</div>;
-            case 'deleted':
-                return <div>Deleted Tab Content</div>;
-            case 'settings':
-                return <div>Settings Tab Content</div>;
+                return (
+                    <div className='completedTask w-full h-[100%]'>
+                        {completed.map((item:any) => {
+                            return(
+                                <div className='completedComponent flex flex-row items-center justify-between bg-[#cbffeb] w-full my-2 rounded-md py-3 px-2 border-[1px] hover:cursor-pointer'>
+                                    <div className='completedTaskDetails'>
+                                        <p className='title font-medium text-[#00ad88]'>{item.Topic}</p>
+                                        <small className='description text-[#008a70]'>{item.Category}</small>
+                                    </div>
+                                    <AiOutlineCheck size={25} className='checkIcon p-1 bg-[#e9fff8] rounded-full text-[#00d4a4]' />
+                                </div>
+                            )
+                        })}
+                    </div>
+                )
             default:
-                return <div>Default Tab Content</div>;
+                return <div>Start Tasking</div>;
         }
     };
 
@@ -211,11 +276,11 @@ const CenterBar: React.FC<CenterBarProps> = ({ selectedTab}) => {
 
     return (
         <div className="centerBar_container w-[80rem] p-4 flex flex-col flex-grow-0">
-            <header className="header border-b-[1.5px] flex flex-row gap-20 p-4 items-center">
+            <header className="header border-b-[1.5px]  flex flex-row gap-20 p-4 items-center">
                 <h1>Tasks</h1>
                 <div className='filter flex flex-col w-[40%]'>
                     <div className="search-container flex flex-row items-center w-full border-[1px] rounded-sm">
-                        <AiOutlineSearch size={35} className='searchIcon px-2 bg-[blue] hover:cursor-pointer' />
+                        <AiOutlineSearch size={35} className='searchIcon px-2 bg-[#00d4a4] hover:cursor-pointer' color='#00332b' />
                         <input
                             placeholder="Search tasks"
                             className="search-input w-full p-1 outline-none"
@@ -227,7 +292,7 @@ const CenterBar: React.FC<CenterBarProps> = ({ selectedTab}) => {
                     {searchQuery && (
                         <div className="search-results absolute bg-white border-2 mt-9 w-[31%] py-2 shadow-[rgba(50,_50,_105,_0.15)_0px_2px_5px_0px,_rgba(0,_0,_0,_0.05)_0px_1px_1px_0px]">
                             {searchResults.map((task) => (
-                                <div className='filters hover:cursor-pointer pl-3 hover:bg-[gray]' onClick={() => {setSearchQuery(''), setSelectedTask(task)}}>
+                                <div className='filters hover:cursor-pointer pl-3 hover:bg-[gray]' onClick={() => {setSearchQuery(''), setSelectedTask(task), setIsTaskContentVisible(true)}}>
                                     <h6>{task.Topic}</h6>
                                 </div>
                             ))}
@@ -241,7 +306,10 @@ const CenterBar: React.FC<CenterBarProps> = ({ selectedTab}) => {
                     
                     {renderTabContent()}
                 </div>
-                <div className='taskContent w-[40%]'>
+                <div className={`taskContent w-[40%] ${isTaskContentVisible ? '' : 'mobile-hidden'}`}>
+                <button className='closeBtn hidden ml-[91%] mt-5' onClick={() => setIsTaskContentVisible(false)}>
+                    <AiOutlineClose size={20}/>
+                </button>
                     {selectedTask ? (
                         <div className='task-container w-full h-full flex flex-col ml-2'>
                             <h1 className='task-title text-[1.5rem] font-semibold'>
@@ -254,11 +322,11 @@ const CenterBar: React.FC<CenterBarProps> = ({ selectedTab}) => {
                                 {selectedTask.Description}
                             </small>
                             <div className='cat flex flexx-row items-center gap-10'>
-                                <small>Category</small>
+                                <small>Category:</small>
                                 <span>{selectedTask.Category}</span>
                             </div>
                             <div className='cat flex flexx-row items-center gap-10'>
-                                <small>Due Date</small>
+                                <small>Due Date:</small>
                             </div>
                             <div className='subTask-Conatainer mt-10'>
                                 <h1 className='title font-semibold text-[1rem]'>Subtask:</h1>
@@ -268,12 +336,12 @@ const CenterBar: React.FC<CenterBarProps> = ({ selectedTab}) => {
                                 </div>
                             </div>
                             <div className='task-footer mt-[30vh] flex flex-row items-center justify-between px-5'>
-                                <button className='finish bg-[yellow] p-2 rounded-lg text-[15px] flex flex-row items-center justify-center gap-2'>
-                                    <IoCheckmarkDoneOutline size={20}/>
+                                <button className='finish bg-[#00d4a4] p-2 rounded-lg text-[15px] flex flex-row items-center justify-center gap-2'>
+                                    <IoCheckmarkDoneOutline size={20} className='saveIcon'/>
                                     Save Changes
                                 </button>
-                                <button onClick={handleCopyToClipboard} className='copy bg-[yellow] p-2 rounded-lg text-[15px] flex flex-row items-center justify-center gap-2'>
-                                    <AiOutlineCopy size={20}/>
+                                <button onClick={handleCopyToClipboard} className='copy bg-[#00d4a4] p-2 rounded-lg text-[15px] flex flex-row items-center justify-center gap-2'>
+                                    <AiOutlineCopy size={20} className='copyIcon'/>
                                     Copy
                                 </button>
                             </div>

@@ -40,8 +40,8 @@ const Input: FC<InputProps> = ({
     disabled,
 }) => {
     return (
-        <div className={`${ContainerStyles} flex items-center border-[1.5px] border-[#85b1ff] rounded h-[40px] w-[100%]`}>
-            {IconBefore && <div className={`m-4 text-[#000000] hover:cursor-pointer ${IconStyleBefore}`}>{IconBefore}</div>}
+        <div className={`${ContainerStyles} flex items-center border-[1.5px] border-[#00a885] rounded h-[40px] w-[100%]`}>
+            {IconBefore && <div className={`m-4 text-[#00a885] hover:cursor-pointer ${IconStyleBefore}`}>{IconBefore}</div>}
             <input
                 placeholder={placeholder}
                 value={value}
@@ -56,7 +56,7 @@ const Input: FC<InputProps> = ({
                 className={`${InputStyles} w-[100%] h-[100%] rounded focus:outline-none`}
             />
             {IconAfter && (
-                <div onClick={onIconAfterClicked} className={`m-4 hover:cursor-pointer ${IconStyleAfter}`}>
+                <div onClick={onIconAfterClicked} className={`m-4 hover:cursor-pointer text-[#00a885] ${IconStyleAfter}`}>
                 {IconAfter}
                 </div>
             )}
