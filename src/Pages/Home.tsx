@@ -8,8 +8,11 @@ import { SlLogout } from 'react-icons/sl';
 import Task from '../Components/Task';
 import AddTaskModal from '../Components/AddTaskModal';
 import Cookies from 'js-cookie';
-import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { Firestore, collection, deleteDoc, onSnapshot, query, where } from 'firebase/firestore';
 import { Db } from '../Utils/Firebase';
+import { GrAdd } from 'react-icons/gr'
+import { IoCheckmarkDoneOutline } from 'react-icons/io5'
+import { AiOutlineCopy } from 'react-icons/ai';
 
 type Tab = 'today' | 'upcoming' | 'completed' | 'deleted' | 'settings';
 
@@ -64,12 +67,36 @@ interface CenterBarProps {
     selectedTab: Tab;
 }
 
+interface Task {
+    id: string;
+    Email: string;
+    Category: string;
+    DueDate: { seconds: number; nanoseconds: number };
+    Topic: string;
+    Description: string;
+}
+
 const CenterBar: React.FC<CenterBarProps> = ({ selectedTab}) => {
     const [ modalOpen, setModalOpen ] = useState(false)
-    const [selectedTask, setSelectedTask] = useState<object | null>(null);
+    const [selectedTask, setSelectedTask] = useState<Task | null>(null);
     const [tasks, setTasks] = useState<{ id: string }[]>([]);
     const handleOpen = () => setModalOpen(true)
     const handleModalClose = () => setModalOpen(false)
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState<Task[]>([]);
+
+    const handleSearch = (query: string) => {
+        setSearchQuery(query);
+    
+        const filteredTasks:any = tasks.filter((task) => {
+        const taskInfo = `${task.Topic} ${task.Category}`;
+        return taskInfo.toLowerCase().includes(query.toLowerCase());
+        });
+    
+        setSearchResults(filteredTasks);
+    };
+    
+
     
     const fetchTasks = () => {
         const email = Cookies.get('userEmail');
@@ -95,10 +122,20 @@ const CenterBar: React.FC<CenterBarProps> = ({ selectedTab}) => {
     useEffect(() => {
         fetchTasks();
     }, []);
-    const handleTaskClick = (item:object) => {
+    const handleTaskClick = (item:any) => {
         console.log(item)
         setSelectedTask(item)
     }
+
+    const deleteTask = async (taskId: string) => {
+        try {
+            const taskRef = doc(Db, 'Tasks', taskId); // Use taskRef instead of tasksRef
+            await deleteDoc(taskRef); // Use `await` to wait for the deletion to complete
+        } catch (error) {
+            console.log('Error deleting task', error);
+        }
+    };
+    
     
     const renderTabContent = () => {
         switch (selectedTab) {
@@ -119,11 +156,13 @@ const CenterBar: React.FC<CenterBarProps> = ({ selectedTab}) => {
                             
                             return (
                                 <Task
-                                taskTitle={item.Topic}
-                                dueDate={formattedDueDate}
-                                category={item.Category}
-                                key={item.id}
-                                onClick={() => handleTaskClick(item)}
+                                    taskTitle={item.Topic}
+                                    dueDate={formattedDueDate}
+                                    category={item.Category}
+                                    key={item.id}
+                                    value={item.id}
+                                    handleChange={() => deleteTask(item.id)}
+                                    onClick={() => handleTaskClick(item)}
                                 />
                             );
                         })}
@@ -142,25 +181,94 @@ const CenterBar: React.FC<CenterBarProps> = ({ selectedTab}) => {
         }
     };
 
+    const handleCopyToClipboard = () => {
+        if (selectedTask) {
+            const taskInfo = `Task: ${selectedTask.Topic}\nDescription: ${selectedTask.Description}\nCategory: ${selectedTask.Category}\nDue Date: ${selectedTask.DueDate}`;
+        
+            const textArea = document.createElement('textarea');
+            textArea.value = taskInfo;
+        
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+        
+            alert('Task information copied to clipboard');
+        }
+    };
+
     return (
         <div className="centerBar_container w-[80rem] p-4">
             <header className="header border-b-[1.5px] flex flex-row gap-20 p-4 items-center">
                 <h1>Tasks</h1>
-                <div className="search-container flex flex-row items-center w-[40%] border-[1px] rounded-sm">
-                    <AiOutlineSearch size={35} className='searchIcon px-2 bg-[blue] hover:cursor-pointer' />
-                    <input
-                        placeholder="search here"
-                        className="search-input w-full p-1 outline-none"
-                    />
+                <div className='filter flex flex-col w-[40%]'>
+                    <div className="search-container flex flex-row items-center w-full border-[1px] rounded-sm">
+                        <AiOutlineSearch size={35} className='searchIcon px-2 bg-[blue] hover:cursor-pointer' />
+                        <input
+                            placeholder="Search tasks"
+                            className="search-input w-full p-1 outline-none"
+                            value={searchQuery}
+                            onChange={(e) => handleSearch(e.target.value)}
+                        />
+                    </div>
+
+                    {searchQuery && (
+                        <div className="search-results absolute bg-white border-2 mt-9 w-[31%] py-2 shadow-[rgba(50,_50,_105,_0.15)_0px_2px_5px_0px,_rgba(0,_0,_0,_0.05)_0px_1px_1px_0px]">
+                            {searchResults.map((task) => (
+                                <div className='filters hover:cursor-pointer pl-3 hover:bg-[gray]' onClick={() => {setSearchQuery(''), setSelectedTask(task)}}>
+                                    <h6>{task.Topic}</h6>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
+
             </header>
             <div className="tab-content w-full h-[90%] flex flex-row pt-3">
                 <div className='task w-[60%] border-r-[1.5px] px-5'>
                     
                     {renderTabContent()}
                 </div>
-                <div className='taskContent'>
-                    Selected Task: {JSON.stringify(selectedTask)}
+                <div className='taskContent w-[40%]'>
+                    {selectedTask ? (
+                        <div className='task-containe w-full h-full flex flex-col ml-2'>
+                            <h1 className='task-title text-[1.5rem] font-semibold'>
+                                Task:
+                            </h1>
+                            <h4 className='task-title text-[1.2rem] font-semibold'>
+                                {selectedTask.Topic}
+                            </h4>
+                            <small className='describe text-[14px] mt-1 mb-5'>
+                                {selectedTask.Description}
+                            </small>
+                            <div className='cat flex flexx-row items-center gap-10'>
+                                <small>Category</small>
+                                <span>{selectedTask.Category}</span>
+                            </div>
+                            <div className='cat flex flexx-row items-center gap-10'>
+                                <small>Due Date</small>
+                            </div>
+                            <div className='subTask-Conatainer mt-10'>
+                                <h1 className='title font-semibold text-[1rem]'>Subtask:</h1>
+                                <div className='subBtn p-3 flex flex-row items-center gap-2 border-b-[1px] hover:cursor-pointer'>
+                                    <GrAdd size={20}/>
+                                    Add New Subtask
+                                </div>
+                            </div>
+                            <div className='task-footer mt-[30vh] flex flex-row items-center justify-between px-5'>
+                                <button className='finish bg-[yellow] p-2 rounded-lg text-[15px] flex flex-row items-center justify-center gap-2'>
+                                    <IoCheckmarkDoneOutline size={20}/>
+                                    Save Changes
+                                </button>
+                                <button onClick={handleCopyToClipboard} className='copy bg-[yellow] p-2 rounded-lg text-[15px] flex flex-row items-center justify-center gap-2'>
+                                    <AiOutlineCopy size={20}/>
+                                    Copy
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <p>No task selected</p>
+                    )}
                 </div>
             </div>
         </div>
@@ -183,3 +291,7 @@ function Home() {
 }
 
 export default Home;
+function doc(Db: Firestore, arg1: string, taskId: any): import("@firebase/firestore").DocumentReference<unknown, import("@firebase/firestore").DocumentData> {
+    throw new Error('Function not implemented.');
+}
+
