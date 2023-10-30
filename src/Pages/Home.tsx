@@ -79,7 +79,7 @@ interface Task {
 const CenterBar: React.FC<CenterBarProps> = ({ selectedTab}) => {
     const [ modalOpen, setModalOpen ] = useState(false)
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-    const [tasks, setTasks] = useState<{ id: string }[]>([]);
+    const [tasks, setTasks] = useState<{ id: string; Topic: string; Category: string }[]>([]);
     const [ localtask, setLocalTasks ] = useState<{ id: string }[]>([]);
     const handleOpen = () => setModalOpen(true)
     const handleModalClose = () => setModalOpen(false)
