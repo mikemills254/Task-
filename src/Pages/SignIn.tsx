@@ -66,7 +66,7 @@ const SignIn = () => {
         {name: 'Github', icon: <AiOutlineGithub size={30}/> }
     ]
     return (
-        <div className="SignUpBody bg-white w-[35%] flex flex-col items-center rounded my-2">
+        <div className="SignInBody bg-white w-[35%] flex flex-col items-center rounded my-2">
             <h1 className="SignUp text-[3rem]">
                 Welcome Back
             </h1>
@@ -108,7 +108,7 @@ const SignIn = () => {
                 }
                 <Button
                     ContainerStyle={'email mt-4 bg-[#85b1ff] text-[#000000]'}
-                    text={'Create Account'}
+                    text={'LOGIN'}
                     type='submit'
                     onClick={formik.handleSubmit}
                     renderChildren={

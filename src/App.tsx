@@ -13,7 +13,7 @@ const App = () => {
         console.log('Is authentecated:', isAuthenticated)
     },[accessToken])
     return (
-        <div className="body m-0 p-0 h-[100vh] flex align-middle justify-center">
+        <div className="Body m-0 p-0 flex-grow-0 flex align-middle justify-center">
             <Router>
                 <Routes>
                     {!isAuthenticated ? (

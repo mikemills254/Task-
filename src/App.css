@@ -22,3 +22,75 @@
 .categorybtns :hover{
     background-color: red;
 }
+@media (max-width: 425px) {
+    .Body {
+        display: flex;
+    }
+    
+    .sidebar__container {
+        display: flex;
+        width: 60%;
+        flex-direction: column;
+        height: 93vh;
+    }
+    .sidebar__container li span {
+        display: none;
+    }
+    .centerBar_container {
+        /* background-color: blue; */
+        padding: 0;
+        margin-left: -32px;
+        display: flex;
+        flex-direction: column;
+    }
+    .taskContent {
+        display: none;
+    }
+    .tab-content {
+        height: 89%;
+    }
+    .tab-content .task {
+        width: 100%;
+        border: none;
+    }
+    .modal {
+        padding: 2px;
+    }
+    .Modalcontainer {
+        width: 95%;
+        display: flex;
+        flex-direction: column;
+    }
+    .Modalcontainer .footer {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .footer-1 {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+    }
+    .footer-2 {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+    }
+    .footer-btn {
+        width: 100%;
+        padding: 10px;
+    }
+    .header {
+        gap: 0;
+    }
+    .header h1 {
+        display: none;
+    }
+    .filter {
+        display: flex;
+        width: 70vw;
+    }
+    .SignInBody, .SignUpBody {
+        width: 90vw;
+    }
+}

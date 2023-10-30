@@ -8,7 +8,7 @@ import { SlLogout } from 'react-icons/sl';
 import Task from '../Components/Task';
 import AddTaskModal from '../Components/AddTaskModal';
 import Cookies from 'js-cookie';
-import { Firestore, collection, deleteDoc, onSnapshot, query, where } from 'firebase/firestore';
+import { collection, deleteDoc, onSnapshot, query, where, doc } from 'firebase/firestore';
 import { Db } from '../Utils/Firebase';
 import { GrAdd } from 'react-icons/gr'
 import { IoCheckmarkDoneOutline } from 'react-icons/io5'
@@ -26,36 +26,36 @@ const Sidebar: React.FC<{ onSelectTab: (tab: Tab) => void }> = ({ onSelectTab })
     }
     return (
         <aside>
-            <div className="sidebar__container h-full w-60 flex flex-col align-middle justify-between border-r-[1.5px]">
+            <div className="sidebar__container h-[100vh] w-60 flex flex-col align-middle justify-between border-r-[1.5px]">
                 <ul className="sidebar_ul">
                     <h1 className="logo text-[1.5rem] font-semibold border-b-[1.5px] p-2">
                         Task+
                     </h1>
                     <li onClick={() => onSelectTab('today')}>
                         <AiOutlineStar />
-                        Today
+                        <span>Today</span>
                     </li>
                     <li onClick={() => onSelectTab('upcoming')}>
                         <AiOutlineCalendar />
-                        Upcoming
+                        <span>Upcoming</span>
                     </li>
                     <li onClick={() => onSelectTab('completed')}>
                         <AiOutlineCheck />
-                        Completed
+                        <span>Completed</span>
                     </li>
                     <li onClick={() => onSelectTab('deleted')}>
                         <BsTrash />
-                        Deleted
+                        <span>Deleted</span>
                     </li>
                 </ul>
                 <ul>
                     <li onClick={() => onSelectTab('settings')}>
                         <BiCog />
-                        Settings
+                        <span>Settings</span>
                     </li>
                     <li onClick={() => handleLogOut()}>
                         <SlLogout />
-                        LogOut
+                        <span>LogOut</span>
                     </li>
                 </ul>
             </div>
@@ -80,6 +80,7 @@ const CenterBar: React.FC<CenterBarProps> = ({ selectedTab}) => {
     const [ modalOpen, setModalOpen ] = useState(false)
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
     const [tasks, setTasks] = useState<{ id: string }[]>([]);
+    const [ localtask, setLocalTasks ] = useState<{ id: string }[]>([]);
     const handleOpen = () => setModalOpen(true)
     const handleModalClose = () => setModalOpen(false)
     const [searchQuery, setSearchQuery] = useState('');
@@ -95,7 +96,7 @@ const CenterBar: React.FC<CenterBarProps> = ({ selectedTab}) => {
     
         setSearchResults(filteredTasks);
     };
-    
+
 
     
     const fetchTasks = () => {
@@ -106,11 +107,17 @@ const CenterBar: React.FC<CenterBarProps> = ({ selectedTab}) => {
             const taskQuery = query(taskCollection, where('Email', '==', email));
         
             const unsubscribe = onSnapshot(taskQuery, (snapshot) => {
-                const updatedTasks = snapshot.docs.map((doc) => ({
+                let updatedTasks = snapshot.docs.map((doc) => ({
                     id: doc.id,
                     ...doc.data(),
                 }));
-                setTasks(updatedTasks);
+                const localTask = JSON.parse(localStorage.getItem('tasks')|| '[]')
+                console.log('local storage', localTask)
+                const mergedTasks = [...localTask, ...updatedTasks];
+            
+                setTasks(mergedTasks);
+                
+                setLocalTasks(mergedTasks);
             });
     
             return () => unsubscribe();
@@ -129,8 +136,8 @@ const CenterBar: React.FC<CenterBarProps> = ({ selectedTab}) => {
 
     const deleteTask = async (taskId: string) => {
         try {
-            const taskRef = doc(Db, 'Tasks', taskId); // Use taskRef instead of tasksRef
-            await deleteDoc(taskRef); // Use `await` to wait for the deletion to complete
+            const taskRef = doc(Db, 'Tasks', taskId);
+            await deleteDoc(taskRef);
         } catch (error) {
             console.log('Error deleting task', error);
         }
@@ -150,15 +157,17 @@ const CenterBar: React.FC<CenterBarProps> = ({ selectedTab}) => {
                         </button>
                         <AddTaskModal isOpen={modalOpen} handleClose={() => handleModalClose()}/>
                         {tasks.map((item: any) => {
-                            const dueDate = item.DueDate.toDate();
-                            const options = { weekday: 'short',day: 'numeric', month: 'short', year: 'numeric' };
+                            const dueDateTimestamp = item.DueDate.seconds * 1000;
+                            const dueDate = new Date(dueDateTimestamp);
+                            
+                            const options:any = { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' };
                             const formattedDueDate = dueDate.toLocaleDateString(undefined, options);
                             
                             return (
                                 <Task
                                     taskTitle={item.Topic}
-                                    dueDate={formattedDueDate}
                                     category={item.Category}
+                                    dueDate={formattedDueDate}
                                     key={item.id}
                                     value={item.id}
                                     handleChange={() => deleteTask(item.id)}
@@ -166,6 +175,7 @@ const CenterBar: React.FC<CenterBarProps> = ({ selectedTab}) => {
                                 />
                             );
                         })}
+
                     </div>
                 );
             case 'upcoming':
@@ -198,7 +208,7 @@ const CenterBar: React.FC<CenterBarProps> = ({ selectedTab}) => {
     };
 
     return (
-        <div className="centerBar_container w-[80rem] p-4">
+        <div className="centerBar_container w-[80rem] p-4 flex flex-col flex-grow-0">
             <header className="header border-b-[1.5px] flex flex-row gap-20 p-4 items-center">
                 <h1>Tasks</h1>
                 <div className='filter flex flex-col w-[40%]'>
@@ -231,7 +241,7 @@ const CenterBar: React.FC<CenterBarProps> = ({ selectedTab}) => {
                 </div>
                 <div className='taskContent w-[40%]'>
                     {selectedTask ? (
-                        <div className='task-containe w-full h-full flex flex-col ml-2'>
+                        <div className='task-container w-full h-full flex flex-col ml-2'>
                             <h1 className='task-title text-[1.5rem] font-semibold'>
                                 Task:
                             </h1>
@@ -276,22 +286,20 @@ const CenterBar: React.FC<CenterBarProps> = ({ selectedTab}) => {
 };
 
 function Home() {
-    const [selectedTab, setSelectedTab] = useState<Tab>('today'); // Initialize with 'today'
+    const [selectedTab, setSelectedTab] = useState<Tab>('today');
 
     const onSelectTab = (tab: Tab) => {
         setSelectedTab(tab);
     };
 
     return (
-        <div className="home-container w-full h-full flex flex-row">
+        <div className="home-container w-full flex flex-row">
             <Sidebar onSelectTab={onSelectTab} />
-            <CenterBar selectedTab={selectedTab}/>
+            <CenterBar selectedTab={selectedTab}/> 
         </div>
     );
 }
 
 export default Home;
-function doc(Db: Firestore, arg1: string, taskId: any): import("@firebase/firestore").DocumentReference<unknown, import("@firebase/firestore").DocumentData> {
-    throw new Error('Function not implemented.');
-}
+
 

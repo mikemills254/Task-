@@ -28,8 +28,18 @@ export default function AddTaskModal({ isOpen, handleClose }: ModalProps) {
                 alert('Please fill in all the details about the task')
             } else {
                 const email:any = Cookies.get('userEmail')
-                const results = await Firestore.AddDataToFirestore(form.topic, form.description, date, selectedOption, email )
-                !results ? setIsLoading(false) : console.log('SuccessFully saved')
+                const task = {
+                    Topic: form.topic,
+                    Description: form.description,
+                    Date: date,
+                    Type: selectedOption,
+                    UserID: email
+                }
+                
+                const results = await Firestore.AddDataToFirestore(task.Topic, task.Description, task.Date, task.Type, task.UserID)
+                !results ? setIsLoading(false) : () => {
+                    localStorage.setItem('task',JSON.stringify(task))
+                }
             }
         } catch (error) {
             console.log(error)
@@ -46,7 +56,7 @@ export default function AddTaskModal({ isOpen, handleClose }: ModalProps) {
             onClose={handleClose}
             className='modal flex flex-col items-center justify-center'
         >
-            <form className='container w-[40%] bg-white h-[30%] flex flex-col p-2 items-center rounded-md shadow-[0_3px_10px_rgb(0,0,0,0.2)]'>
+            <form className='Modalcontainer w-[40%] bg-white flex-grow-0 flex flex-col p-2 items-center rounded-md shadow-[0_3px_10px_rgb(0,0,0,0.2)]'>
                 <input
                     placeholder='Task name here'
                     value={form.topic}
