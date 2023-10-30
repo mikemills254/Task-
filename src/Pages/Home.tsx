@@ -93,6 +93,8 @@ const CenterBar: React.FC<CenterBarProps> = ({ selectedTab}) => {
         const taskInfo = `${task.Topic} ${task.Category}`;
         return taskInfo.toLowerCase().includes(query.toLowerCase());
         });
+
+        console.log(localtask)
     
         setSearchResults(filteredTasks);
     };
